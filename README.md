@@ -5,6 +5,7 @@ In this section I will explain every step the script takes during the process of
 There are many steps that the program takes in order achieve the final result of extracting all possible meta data. The process is divided into four different stages: Execution, Creation, Collection, and Con-clusion.
 
 Execution
+
 In the beginning we have to choose the location where to execute the script. Originally the script was in one specific directory and could only be executed in the directory using the bash command fol-lowed by the name of the script. For example, bash code.sh.
 The directory of the script was later added to the $PATH variable, and currently can be executed an-ywhere using the extract command. Arguments can also be added to the command for specific extrac-tion. 
 If a directory name is added as the first argument, the meta data of every file on that directory will be extracted and will be added to the directory of origin. If a file is added instead of a directory, only that file will be extracted and added to the directory of origin. If no argument is added to the extract com-mand, the files in the current directory will be extracted.
@@ -19,6 +20,7 @@ For the second argument a directory location can be added for where to store all
 
 
 Creation – for directories
+
 When the script is executed a directory, known as Extracted, is created to stores all the files that will be created. I will continue to refer to the Extracted directory simply as Extracted throughout the rest of the paper. 
 After Extracted is created, the script loops through all the files in the selected directory. Hidden files in a directory are also part of this process. Each text files, upon created, is immediately moved to Ex-tracted, and is given the extension “.e”, meaning extracted. There are some files that will be excluded in this process in order to reduce confusion:
 -	Extracted and each subsequent text file are excluded from the loop, if this wasn’t the case it would eventually cause a system wide storage overload from all the files crated.
@@ -27,10 +29,12 @@ After Extracted is created, the script loops through all the files in the select
 Besides the regular document a separate “master file” is created to hold the meta data of all these files in one place, it is simply titled “masterfile.txt”. 
 
 Creation – for an individual file
+
 If the investigator wishes to only to retrieve meta data from one file, the file name should be added as the first argument. If a file is in the current directory, only the filename is enough, otherwise the full path should be written. Extracted will still be created to store the text file that holds the meta data. Because this is an extraction of an individual file, a master file is not necessary because all the meta data will already be in the singular text file. The standards are the same as with the directories, if the user does not have permission, the program will stop and ask the user to use sudo to run the script as an administrator.
 
 
 Collection
+
 After a text document for the corresponding file has been created, and moved to Extracted, the meta data from the files is added. The simplest way to retrieve the meta data for a file is by using the built-in stat command. Below is an example of the output of the stat command:
   File: file.txt
   Size: 4030      	Blocks: 8          IO Block: 4096   regular file
@@ -50,5 +54,4 @@ If the user does not have the required permissions for meta data collection of a
 
 
 Extraction conclusion
-
 When the extraction is concluded it informs the user that the meta data of all the files of the selected directory, or individual file, have been successfully extracted. All the files are available for the investi-gator to see in Extracted along with masterfile.txt containing the meta of all the files in the extrac-tion process.
