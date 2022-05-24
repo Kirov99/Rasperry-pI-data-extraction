@@ -50,4 +50,5 @@ If the user does not have the required permissions for meta data collection of a
 
 
 Extraction conclusion
+
 When the extraction is concluded it informs the user that the meta data of all the files of the selected directory, or individual file, have been successfully extracted. All the files are available for the investi-gator to see in Extracted along with masterfile.txt containing the meta of all the files in the extrac-tion process.
