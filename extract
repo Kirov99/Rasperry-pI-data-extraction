@@ -1,0 +1,534 @@
+# Create a function where if the curret file you are checking is a directory 
+# It should all files with in the document 
+
+#Steps to take
+#Step 1: Go to the directory 
+#Step 2: Loop over all the files in the directory
+#Step 3: Create a extracted file for each of these files
+#Step 4: if the the file is a directory go inside it and repeat the steps
+
+#!/bin/bash
+
+#Global Variables
+
+# line break variable
+LINEBREAK=$'\n'
+
+# tab break variable
+TAB=$'\t'
+
+# hirizontal line variable
+HR='============================================================'
+
+COLUMS=$(tput cols)
+
+# date variable
+DATE=$(date)
+
+# File type conditions function
+filetype() {
+
+# Check if exiftool meta data can be added and if so add it
+if [[ $(exiftool $1) = *Error* ]];then
+   file $1 >> "$2"
+   echo "No Exiftool meta data could be added" >> "$2"
+else
+   file $1 >> $2 
+   echo $LINEBREAK >> $2;	
+   echo "$1 Exif metadata:" >> $2
+   # requires the use of "sudo apt-get install pdfinfo" if not installed
+   while read line; 
+   do 
+      meta_data=$(echo "$line" | xargs)
+
+      # combine the two and add a colon bewteen them
+      #echo "$type_name: $meta_data" >> $2
+      echo "$meta_data" >> $2
+	    
+   done < <(exiftool $1) 
+   echo $LINEBREAK >> $2;
+  
+fi
+
+# If the file is some sort of image file 
+if [[ $(file -b $1) = *image* ]]; then
+	
+# requires the use of "sudo apt-get install imagemagick" if not installed
+   echo $LINEBREAK >> $2;	
+   echo "$1 ImageMagick meta data:" >> $2
+   while read line; 
+   do 
+      meta_data=$(echo "$line" | xargs)
+
+      # combine the two and add a colon bewteen them
+      #echo "$type_name: $meta_data" >> $2
+      echo "$meta_data" >> $2
+	    
+   done < <(identify -verbose $1)
+
+fi
+
+# If the file is a pdf 
+if [[ $(file -b $1) = *PDF* ]]; then
+
+   echo $LINEBREAK >> $2;	
+   echo "$1 PDFinfo Meta data:" >> $2
+   # requires the use of "sudo apt-get install pdfinfo" if not installed
+   while read line; 
+   do 
+      meta_data=$(echo "$line" | xargs)
+      echo "$meta_data" >> $2
+
+   done < <(pdfinfo $1)
+
+# requires the use of "sudo apt-get install libimage-exiftool-perl" if not installed
+#adds exif meta data to the file
+
+fi
+
+# If the file is a media file
+if [[ $(file -b $1) = *Media* ]]; then
+
+# requires the use of "sudo apt-get install libimage-exiftool-perl" if not installed
+#adds media file data to the file
+   echo $LINEBREAK >> $2;	
+   echo "$1 Mediainfo meta data:" >> $2
+# requires the use of "sudo apt-get install mediainfo" if not installed
+   while read line; 
+   do 
+      # Strip white spaces 
+      meta_data=$(echo "$line" | xargs)
+      echo "$meta_data" >> $2
+   done < <(mediainfo $1)
+fi
+
+}
+
+strip() {
+
+while read line; 
+   do 
+      # Strip everything right of  the colon(:) and add it to the type name variable
+      type_name=$(echo "$line" | xargs | cut -f1 -d ':')
+      # Strip everything left of  the colon(:), strip all white space on the left side and add it to the meta data variable
+      meta_data=$(echo "$line" | xargs | cut -f 2- -d ':' | sed 's/^ *//g')
+      # combine the two and add a colon bewteen them
+      echo "$type_name: $meta_data" >> $2	    
+   done < <( $1)
+
+}
+
+masterfile() {
+
+title="Master File of $2"
+
+# If Directory exists delete it and then creates a new one
+if [ -f $1/extracted/masterfile.txt ]; then
+    
+   rm $1/extracted/masterfile.txt # Deletes exsiting masterfile
+
+#If the directory doesn't exist it creates it 
+else
+   
+   #Create the master file and move it to the extracted directory
+   touch $1/extracted/masterfile.txt # && mv masterfile.txt $2/extracted	
+
+   # Add the master file title to the file and allign it to the center	
+   printf "%*s\n" $(((${#title}+$COLUMS)/2)) "$title $LINEBREAK" >> $1/extracted/masterfile.txt
+
+fi
+
+}
+
+detailed_stats() {
+
+# File name
+file_name=$(stat --format=%n $1);
+echo $3 "Name: $file_name" >> $2
+
+# File type
+file_type=$(stat --format=%F $1);
+echo $3 "File type: $file_type" >> $2
+
+# Owner uid and name
+owner_uid=$(stat --format=%u $1);
+owner_name=$(stat --format=%U $1);
+echo $3 "Owner of file: $owner_name / uid: $owner_uid" >> $2
+
+# Group id and name
+group_uid=$(stat --format=%g $1);
+group_name=$(stat --format=%G $1);
+echo $3 "Group of file: $group_name / uid: $group_uid" >> $2
+
+# Mount Point
+mount_point=$(stat --format=%m $1);
+echo $3 "Mount Point: $mount_point" >> $2
+
+# Device number
+device_number=$(stat --format=%d $1);
+echo $3 "Device number: $device_number" >> $2
+
+# Inode number
+inode_number=$(stat --format=%i $1);
+echo $3 "Inode number: $inode_number" >> $2
+
+# Number of hard links
+hard_links=$(stat --format=%h $1);
+echo $3 "Number of hard links: $hard_links" >> $2
+
+# Total size of file in bytes
+siza=$(stat --format=%s $1);
+echo $3 "Total size of file: $size" >> $2
+
+# Time of last status change
+status_change=$(stat --format=%z $1);
+echo $3 "Time of last status change: $status_change" >> $2
+
+# Date of last access
+last_access=$(stat --format=%x $1);
+echo $3 "Date of last access: $last_access" >> $2
+
+# Date of last Modification
+last_modifiction=$(stat --format=%y $1);
+echo $3 "Date of last Modification: $last_modifiction" >> $2
+
+# Date of creation
+file_create=$(stat --format=%w $1);
+echo $3 "Date of creation: $file_create" >> $2
+
+# Access rights in human read
+access_rights=$(stat --format=%A $1);
+echo $3 "Access rights: $access_rights" >> $2
+access $1 $2 $3;
+echo $linebreak >> $2;
+
+}
+
+access() {
+
+access=$(stat --format=%a $1);
+
+for i in {0..2}; 
+do
+	if [[ $i == 0 ]]
+	then 
+	  user="Owner";
+	elif [[ $i == 1 ]]
+	then 
+	  user="Group";
+	else
+	  user="Public";
+	fi
+	if [[ ${access:$i:1} == "0" ]]
+	then 
+	  echo $3 "$user Permissions: None" >> $2
+	elif [[ ${access:$i:1} == "1" ]]
+	then 
+	  echo $3 "$user Permissions: Execute" >> $2
+	elif [[ ${access:$i:1} == "2" ]]
+	then 
+	  echo $3 "$user Permissions: Write" >> $2
+ 	elif [[ ${access:$i:1} == "4" ]]
+	then 
+	  echo $3 "$user Permissions: Read" >> $2
+	elif [[ ${access:$i:1} == "3" ]]
+	then 
+	  echo $3 "$user Permissions: Execute,Write" >> $2
+ 	elif [[ ${access:$i:1} == "5" ]]
+	then 
+	  echo $3 "$user Permissions: Execute,Read" >> $2
+	elif [[ ${access:$i:1} == "6" ]]
+	then 
+	  echo $3 "$user Permissions: Write,Read" >> $2
+ 	else
+	  echo $3 "$user Permissions: Execute,Write,Read" >> $2
+	fi
+done
+
+}
+
+permissions() {
+
+# find out if file has write permission or not
+#[ -w $1 ] && W="yes" || W="No"
+ 
+# find out if file has excute permission or not
+#[ -x $1 ] && X="yes" || X="No"
+ 
+# find out if file has read permission or not
+#[ -r $1 ] && R="yes" || R="No"
+ 
+
+#echo "$W"
+#echo "$R"
+#echo "$X"
+
+#if [[ $R = "No" && $X = "No" ]];then
+#   permission="100"
+#else
+#   permission="101"
+
+#fi
+
+yes_permission=0;
+no_permission=0;
+
+for i in $1/*; 
+do
+
+  permission=$(stat --format=%a $1):2:1;
+  permission=${permission:2:1};
+
+  if [[ $permission > 3 ]];
+  then 
+    ((yes_permission=$yes_permission+1));
+  else
+    ((no_permission=$no_permission+1));
+  fi 
+
+done
+
+if [[ $no_permission > $yes_permission ]];
+  then 
+     exit 1
+fi 
+
+echo $yes_permission
+echo $no_permission
+
+}
+
+directory_extraction() {
+
+# Ceheck the public permission of the directory
+permission=$(stat --format=%a $1);
+
+# if the user has a permission score over 3 then the directory extracton can continue
+if [[ $(stat --format=%U $1) = `whoami` && ${permission:0:1} > 6 || ${permission:2:1} > 6 ]];then 
+   echo "Extraction of $(readlink -f $1)"
+elif [[ `whoami` = root ]];then
+   echo "You are using sudo"
+   echo "You have permission"
+else
+   echo "Unsatsfactory permissions for $1"
+   echo "Pease run with sudo"
+   exit 1
+fi
+
+# If Directory exists delete it and then creates a new one
+if [ -d $2/extracted ]; then
+   sudo rm -r $2/extracted # Delete directoy and all files within it
+fi
+
+#created Extracted directory
+mkdir "$2/extracted"
+
+#create the master file
+masterfile $2 $(readlink -f $1) && echo "Creating Masterfile"	
+
+# If the file with a .e extension already exist because the script was stopped in the middle delete it
+for file in $1/*;
+do
+   if [[ $file == *.e ]];then
+    rm $file
+   fi
+
+done
+
+#This command is used so the hidden files will appear during the xtraction porcess
+shopt -s dotglob
+
+# loop trough all the files in the current directory
+for file in $1/*;
+do 
+  # if one of the files is alrady an extracted file skip it
+  if [[ $file == *extracted ]]; then
+        continue
+  else
+	new=$(readlink -f $file)
+	DIR=$(dirname $new)
+
+	echo "Extracting $file"
+
+	# Add a temporary extension at the end to avoid confusion		
+	ext=$(echo "$file.e")
+
+	# Create a text file of the same name
+	touch $ext
+
+	# Add the name of the investigator to the document
+	echo "Investigator name: Martin Kirov" >> "$ext" 
+
+	# Add the time and dat of extraction to the document
+	echo "Data Extraction was done on `date`" >> "$ext" 
+
+	# Add the absolute path of the file to the the document
+	echo "File path: `readlink -f $file`" >> "$ext" 
+
+	# Add the metadata of a file to the document	
+	stat "$file" >> "$ext";
+	
+	detailed_stats "$file" "$ext"
+	filetype "$file" "$ext";
+
+	detailed_stats "$DIR" "$2/extracted/masterfile.txt"
+	filetype "$file" "$2/extracted/masterfile.txt";
+
+	if [[ -d "$file" ]]; then
+		
+		if [ "$(ls -A "$file")" ]; then
+
+			#Add a line break in the file
+			echo $LINEBREAK >> "$ext";
+
+			# List the files found in the directory		
+			echo "Files found in directory:" >> "$ext";
+			
+			ls -A $file >> "$ext";
+			
+			echo $LINEBREAK >> "$ext";
+
+			# Read the temparary file line by line and add a space at the begining of each line
+			# This is to defirantiate the from other files on the text file
+			#THIS KIND OF LOOP ONLY WORKS IN BASH
+
+
+			#while read line; 
+			#do 
+			    #echo $TAB $line | grep "File: " | cut -f 2- -d ':'
+			    #echo "$TAB $line" >> "$ext"
+			    #tempfile.txt
+			#done < <(stat "$file"/*) # stat "$file"/*
+			for i in $file/*;
+			do
+
+			     echo $i
+			     while read line; 
+			     do 
+			   
+			       echo -e ' \t ' $line >> "$ext"
+			    
+			     done < <(stat "$i")
+			     echo $linebreak >> "$ext"
+
+			     #while read line; 
+			     #do 
+			    
+			       #echo $line >> "$ext"
+			    
+			     #done < <(detailed_stats "$i" $ext $(echo -e ' \t '))
+
+			     #while read line; 
+			     #do 
+			       
+			       #echo -e $TAB $line >> "$ext"
+			    
+			     #done < <(filetype "$i" "$ext" '\t')
+   			 
+			done
+
+
+                else
+			echo "No files were found in this directory:" >> "$ext";
+		fi
+	fi		
+	 # Move file to the "extracted" directory	 
+	mv "$ext" $2/extracted;
+ fi
+		
+done
+
+} 
+
+file_extraction() {
+
+# Ceheck the public permission of the directory
+permission=$(stat --format=%a $1);
+permission=${permission:2:1};
+
+extracted="$1_extracted"
+
+# if the user has a permission score over 3 then the directory extracton can continue
+if [[ $permission > 3 ]];
+then 
+   # Show which file is being extracted on the screem
+   echo "Extraction of" $1
+else
+   echo "Unsatsfactory permissions for $1"
+   echo "Please run with sudo"
+   exit 1
+fi
+
+# If Directory exists delete it and then creates a new one
+if [ -d $2/$extracted ]; then
+   sudo rm -r $2/$extracted # Delete directoy and all files within it	
+fi
+
+#created Extracted directory
+mkdir $2/$extracted
+
+# Add a temporary extension at the end to avoid confusion		
+ext=$(echo "$1".e)
+
+# Create a text file of the same name
+touch $ext
+
+# Add the name of the investigator to the document
+echo "Investigator name: Martin Kirov" >> $ext
+
+# Add the time and dat of extraction to the document
+echo "Data Extraction was done on `date`" >> $ext
+
+# Add the absolute path of the file to the the document
+echo "File path: $PATH" >> $ext
+
+# Add the metadata of a file to the document	
+stat $1 >> $ext;
+
+filetype $1 $ext;
+
+# Move file to the "extracted" directory	 
+mv $ext $2/$extracted;
+
+}
+
+selectfile()
+{
+if [ $# -eq 0 ];
+then 
+   #Start the extraction process
+   directory_extraction . .
+
+elif [[ -d "$1" ]];
+then
+   if [[ -d "$2" ]];
+   then 
+     #Start the extraction process
+     directory_extraction "$1" "$2"
+   else
+     directory_extraction "$1" .
+   fi
+
+elif [[ -f "$1" ]];
+then
+   if [[ -d "$2" ]];
+   then 
+     #Start the file extraction process
+     file_extraction "$1" "$2"
+   else
+     file_extraction "$1" $(dirname "$1")
+   fi
+
+else
+   echo "Directory/file does not exist or has been incorrently entered"   
+fi
+
+}
+
+selectfile $1 $2
+
+#Optional report
+#report
+
+#possible gui expansion
+
