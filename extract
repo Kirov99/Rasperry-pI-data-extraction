@@ -525,10 +525,8 @@ fi
 
 }
 
+#Start the process
 selectfile $1 $2
-
-#Optional report
-#report
 
 #possible gui expansion
 
